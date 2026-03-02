@@ -16,14 +16,16 @@
 //!
 //! ## Example
 //!
-//! ```rust,no_run
+//! ```rust,ignore
 //! use rusqlite::Connection;
-//! use sqlite_vtable_opendal::register_opendal_module;
 //!
 //! let conn = Connection::open_in_memory()?;
-//! register_opendal_module(&conn)?;
 //!
-//! // Query Dropbox metadata
+//! // Backend implementations will provide their own registration functions
+//! // For example with Dropbox backend:
+//! // dropbox_vtab::register(&conn)?;
+//!
+//! // Query cloud storage metadata using standard SQL
 //! let mut stmt = conn.prepare("
 //!     SELECT path, size FROM dropbox_files
 //!     WHERE size > 10000000
@@ -35,6 +37,7 @@
 pub mod types;
 pub mod error;
 pub mod backends;
+pub mod vtab;
 
 // Re-export commonly used types
 pub use types::{FileMetadata, QueryConfig};
