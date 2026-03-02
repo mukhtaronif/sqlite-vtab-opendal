@@ -46,7 +46,5 @@ pub(crate) fn create_operator(builder: impl Builder) -> Result<Operator> {
         .map_err(|e| e.into())
 }
 
-// Backend implementations will be added in separate files:
-// pub mod dropbox;
-// pub mod s3;
-// pub mod local_fs;
+// Backend implementations
+pub mod local_fs;
