@@ -215,7 +215,7 @@ pub fn register(
     module_name: &str,
     root_path: impl Into<String>,
 ) -> rusqlite::Result<()> {
-    use crate::types::columns;
+    use crate::types::{columns, QueryConfig};
     use rusqlite::{
         ffi,
         vtab::{self, eponymous_only_module, IndexInfo, VTab, VTabCursor, VTabKind},
@@ -237,14 +237,16 @@ pub fn register(
         base: ffi::sqlite3_vtab_cursor,
         files: Vec<crate::types::FileMetadata>,
         current_row: usize,
+        root_path: String,
     }
 
     impl LocalFsCursor {
-        fn new() -> Self {
+        fn new(root_path: String) -> Self {
             Self {
                 base: ffi::sqlite3_vtab_cursor::default(),
                 files: Vec::new(),
                 current_row: 0,
+                root_path,
             }
         }
     }
@@ -256,11 +258,19 @@ pub fn register(
             _idx_str: Option<&str>,
             _args: &vtab::Values<'_>,
         ) -> rusqlite::Result<()> {
-            // Get the root path from the parent table
-            // This is a placeholder - in a real implementation, we'd get the root_path
-            // from the table, create a backend, and fetch files
-            // TODO: Implement actual file fetching using LocalFsBackend
-            self.files = Vec::new();
+            // Create backend and fetch files
+            let backend = LocalFsBackend::new(&self.root_path);
+            let config = QueryConfig::default();
+
+            // Fetch files from the backend (blocking the async call)
+            let files = tokio::task::block_in_place(|| {
+                tokio::runtime::Handle::current().block_on(async {
+                    backend.list_files(&config).await
+                })
+            })
+            .map_err(|e| rusqlite::Error::ModuleError(e.to_string()))?;
+
+            self.files = files;
             self.current_row = 0;
             Ok(())
         }
@@ -348,7 +358,7 @@ pub fn register(
         }
 
         fn open(&mut self) -> rusqlite::Result<Self::Cursor> {
-            Ok(LocalFsCursor::new())
+            Ok(LocalFsCursor::new(self.root_path.clone()))
         }
     }
 
@@ -456,5 +466,92 @@ mod tests {
 
         assert!(files.iter().any(|f| f.name == "file1.txt"));
         assert!(files.iter().any(|f| f.name == "file2.txt"));
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_sqlite_integration() {
+        use rusqlite::Connection;
+
+        let temp_dir = TempDir::new().unwrap();
+        let temp_path = temp_dir.path();
+
+        // Create test files
+        fs::write(temp_path.join("large.txt"), "x".repeat(10000)).unwrap();
+        fs::write(temp_path.join("small.txt"), "tiny").unwrap();
+        fs::write(temp_path.join("medium.txt"), "medium content").unwrap();
+
+        // Open SQLite connection and register virtual table
+        let conn = Connection::open_in_memory().unwrap();
+        register(&conn, "local_files", temp_path.to_str().unwrap()).unwrap();
+
+        // Query all files
+        let mut stmt = conn
+            .prepare("SELECT name, size, is_dir FROM local_files ORDER BY name")
+            .unwrap();
+
+        let files: Vec<(String, i64, bool)> = stmt
+            .query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))
+            .unwrap()
+            .collect::<std::result::Result<Vec<_>, _>>()
+            .unwrap();
+
+        assert_eq!(files.len(), 3);
+        assert!(files.iter().any(|(name, _, _)| name == "large.txt"));
+        assert!(files.iter().any(|(name, _, _)| name == "small.txt"));
+        assert!(files.iter().any(|(name, _, _)| name == "medium.txt"));
+
+        // Query with WHERE clause
+        let mut stmt = conn
+            .prepare("SELECT name FROM local_files WHERE size > 100")
+            .unwrap();
+
+        let large_files: Vec<String> = stmt
+            .query_map([], |row| row.get(0))
+            .unwrap()
+            .collect::<std::result::Result<Vec<_>, _>>()
+            .unwrap();
+
+        // Only large.txt should be returned
+        assert_eq!(large_files.len(), 1);
+        assert_eq!(large_files[0], "large.txt");
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_sqlite_count_and_aggregate() {
+        use rusqlite::Connection;
+
+        let temp_dir = TempDir::new().unwrap();
+        let temp_path = temp_dir.path();
+
+        // Create multiple files
+        for i in 1..=5 {
+            fs::write(temp_path.join(format!("file{}.txt", i)), format!("content{}", i))
+                .unwrap();
+        }
+
+        let conn = Connection::open_in_memory().unwrap();
+        register(&conn, "local_files", temp_path.to_str().unwrap()).unwrap();
+
+        // Test COUNT
+        let count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM local_files", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(count, 5);
+
+        // Test SUM of sizes
+        let total_size: i64 = conn
+            .query_row("SELECT SUM(size) FROM local_files", [], |row| row.get(0))
+            .unwrap();
+        assert!(total_size > 0);
+
+        // Test ORDER BY
+        let first_file: String = conn
+            .query_row(
+                "SELECT name FROM local_files ORDER BY name LIMIT 1",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(first_file, "file1.txt");
     }
 }
