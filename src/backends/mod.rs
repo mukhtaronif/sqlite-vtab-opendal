@@ -49,3 +49,4 @@ pub(crate) fn create_operator(builder: impl Builder) -> Result<Operator> {
 // Backend implementations
 pub mod local_fs;
 pub mod dropbox;
+pub mod s3;
