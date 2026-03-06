@@ -335,6 +335,7 @@ cargo test
 - [rusqlite](https://github.com/rusqlite/rusqlite) - SQLite bindings for Rust
 - [Surveilr](https://github.com/surveilr/surveilr) - Uses this library for federated queries
 
+
 ---
 
 ## 📄 License
@@ -346,7 +347,7 @@ Licensed under either of:
 
 at your option.
 
----
+--- 
 
 ## 🙏 Acknowledgments
 
