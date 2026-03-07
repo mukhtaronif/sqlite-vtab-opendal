@@ -25,6 +25,7 @@ opendal = { version = "0.50.2", features = [
     "services-http",
     "services-s3",
     "services-dropbox",
+    "services-gdrive",
 ] }
 
 # Async runtime

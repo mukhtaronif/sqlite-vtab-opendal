@@ -50,3 +50,4 @@ pub(crate) fn create_operator(builder: impl Builder) -> Result<Operator> {
 pub mod local_fs;
 pub mod dropbox;
 pub mod s3;
+pub mod gdrive;
