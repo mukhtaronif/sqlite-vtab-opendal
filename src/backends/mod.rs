@@ -51,3 +51,5 @@ pub mod local_fs;
 pub mod dropbox;
 pub mod s3;
 pub mod gdrive;
+pub mod postgresql;
+pub mod http;
