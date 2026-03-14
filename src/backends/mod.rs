@@ -6,7 +6,6 @@
 use crate::error::Result;
 use crate::types::{FileMetadata, QueryConfig};
 use async_trait::async_trait;
-use opendal::{Builder, Operator};
 
 /// Trait that all storage backends must implement
 ///
@@ -34,16 +33,6 @@ pub trait StorageBackend: Send + Sync {
 
     /// Get the name of this backend (for logging/debugging)
     fn backend_name(&self) -> &'static str;
-}
-
-/// Create an OpenDAL operator for a given backend and configuration
-///
-/// This is a helper function used by backend implementations to create
-/// the underlying OpenDAL operator with proper configuration.
-pub(crate) fn create_operator(builder: impl Builder) -> Result<Operator> {
-    Operator::new(builder)
-        .map(|op| op.finish())
-        .map_err(|e| e.into())
 }
 
 // Backend implementations
