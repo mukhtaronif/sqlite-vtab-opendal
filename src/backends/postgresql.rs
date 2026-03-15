@@ -88,9 +88,8 @@ impl PostgresqlBackend {
             .key_field(&self.key_field)
             .value_field(&self.value_field);
 
-        Operator::new(builder)
-            .map(|op| op.finish())
-            .map_err(|e| VTableError::OpenDal(e))
+        Ok(Operator::new(builder)?
+            .finish())
     }
 }
 

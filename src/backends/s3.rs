@@ -4,7 +4,7 @@
 //! Requires AWS credentials and bucket configuration.
 
 use crate::backends::StorageBackend;
-use crate::error::{Result, VTableError};
+use crate::error::Result;
 use crate::types::{FileMetadata, QueryConfig};
 use async_trait::async_trait;
 use futures_util::TryStreamExt;
@@ -127,9 +127,8 @@ impl S3Backend {
             builder = builder.access_key_id(key_id).secret_access_key(secret);
         }
 
-        Operator::new(builder)
-            .map(|op| op.finish())
-            .map_err(|e| VTableError::OpenDal(e))
+        Ok(Operator::new(builder)?
+            .finish())
     }
 }
 
@@ -160,10 +159,10 @@ impl StorageBackend for S3Backend {
                     | Metakey::Etag,
             )
             .await
-            .map_err(|e| VTableError::OpenDal(e))?;
+            ?;
 
         // Iterate through entries
-        while let Some(entry) = lister.try_next().await.map_err(|e| VTableError::OpenDal(e))? {
+        while let Some(entry) = lister.try_next().await? {
             let entry_path = entry.path();
             let entry_mode = entry.metadata().mode();
 
@@ -195,7 +194,7 @@ impl StorageBackend for S3Backend {
                 let metadata = operator
                     .stat(&full_path)
                     .await
-                    .map_err(|e| VTableError::OpenDal(e))?;
+                    ?;
 
                 // Optionally fetch content
                 let content = if config.fetch_content {

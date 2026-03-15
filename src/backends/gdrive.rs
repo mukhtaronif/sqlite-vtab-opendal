@@ -4,7 +4,7 @@
 //! Requires a Google Drive access token for authentication.
 
 use crate::backends::StorageBackend;
-use crate::error::{Result, VTableError};
+use crate::error::Result;
 use crate::types::{FileMetadata, QueryConfig};
 use async_trait::async_trait;
 use futures_util::TryStreamExt;
@@ -65,9 +65,8 @@ impl GdriveBackend {
             .access_token(&self.access_token)
             .root(&self.base_path);
 
-        Operator::new(builder)
-            .map(|op| op.finish())
-            .map_err(|e| VTableError::OpenDal(e))
+        Ok(Operator::new(builder)?
+            .finish())
     }
 }
 
@@ -102,10 +101,10 @@ impl StorageBackend for GdriveBackend {
                     | Metakey::LastModified,
             )
             .await
-            .map_err(|e| VTableError::OpenDal(e))?;
+            ?;
 
         // Iterate through entries
-        while let Some(entry) = lister.try_next().await.map_err(|e| VTableError::OpenDal(e))? {
+        while let Some(entry) = lister.try_next().await? {
             let entry_path = entry.path();
             let entry_mode = entry.metadata().mode();
 
@@ -137,7 +136,7 @@ impl StorageBackend for GdriveBackend {
                 let metadata = operator
                     .stat(&full_path)
                     .await
-                    .map_err(|e| VTableError::OpenDal(e))?;
+                    ?;
 
                 // Optionally fetch content
                 let content = if config.fetch_content {

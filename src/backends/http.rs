@@ -4,7 +4,7 @@
 //! It treats HTTP resources as "files" that can be queried.
 
 use crate::backends::StorageBackend;
-use crate::error::{Result, VTableError};
+use crate::error::Result;
 use crate::types::{FileMetadata, QueryConfig};
 use async_trait::async_trait;
 use opendal::{services::Http, Operator};
@@ -53,9 +53,8 @@ impl HttpBackend {
     fn create_operator(&self) -> Result<Operator> {
         let builder = Http::default().endpoint(&self.endpoint);
 
-        Operator::new(builder)
-            .map(|op| op.finish())
-            .map_err(|e| VTableError::OpenDal(e))
+        Ok(Operator::new(builder)?
+            .finish())
     }
 }
 
@@ -93,7 +92,7 @@ impl StorageBackend for HttpBackend {
                 let name = if path.is_empty() {
                     "index".to_string()
                 } else {
-                    path.split('/').last().unwrap_or(&path).to_string()
+                    path.split('/').next_back().unwrap_or(&path).to_string()
                 };
 
                 results.push(FileMetadata {
@@ -117,7 +116,7 @@ impl StorageBackend for HttpBackend {
                     let name = if path.is_empty() {
                         "index".to_string()
                     } else {
-                        path.split('/').last().unwrap_or(&path).to_string()
+                        path.split('/').next_back().unwrap_or(&path).to_string()
                     };
 
                     let content_data = bytes.to_vec();

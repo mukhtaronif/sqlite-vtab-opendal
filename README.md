@@ -42,9 +42,9 @@ ORDER BY size DESC;
 - 🚀 **Zero Data Ingestion** - Query directly from storage without downloading
 - 📊 **Standard SQL** - Use familiar SQL syntax for cloud storage queries
 - ⚡ **Metadata-Only Queries** - Fetch only what you need (size, dates, etags)
-- 🔌 **Multiple Backends** - Local FS, Dropbox, S3, Google Drive (via OpenDAL)
+- 🔌 **Multiple Backends** - Local FS, Dropbox, S3, Google Drive, PostgreSQL, HTTP (via OpenDAL)
 - 🎯 **Composable** - Combine with SQLite's powerful query engine
-- 🧪 **Well-Tested** - 14 tests covering unit, integration, and doc tests
+- 🧪 **Well-Tested** - 31 tests covering unit, integration, and doc tests
 
 ---
 
@@ -127,19 +127,97 @@ Query:
 SELECT * FROM my_files WHERE name LIKE '%.txt';
 ```
 
-### Future Backends
-
-Coming soon:
+### AWS S3
 
 ```rust
-// Dropbox (planned)
-dropbox::register(&conn, "dropbox_files", access_token, root_path)?;
+use sqlite_vtable_opendal::backends::s3;
 
-// S3 (planned)
-s3::register(&conn, "s3_files", bucket, region, credentials)?;
+s3::register(
+    &conn,
+    "s3_files",
+    "my-bucket",           // bucket name
+    "us-east-1",           // region
+    "AKIAIOSFODNN7EXAMPLE", // access_key_id
+    "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY" // secret_access_key
+)?;
+```
 
-// Google Drive (planned)
-gdrive::register(&conn, "gdrive_files", credentials)?;
+Query:
+```sql
+SELECT path, size FROM s3_files WHERE path LIKE '%.csv' LIMIT 100;
+```
+
+### Dropbox
+
+```rust
+use sqlite_vtable_opendal::backends::dropbox;
+
+dropbox::register(
+    &conn,
+    "dropbox_files",
+    "your_access_token",  // Get from Dropbox App Console
+    "/"                   // root path
+)?;
+```
+
+Query:
+```sql
+SELECT name, last_modified FROM dropbox_files ORDER BY last_modified DESC;
+```
+
+### Google Drive
+
+```rust
+use sqlite_vtable_opendal::backends::gdrive;
+
+gdrive::register(
+    &conn,
+    "gdrive_files",
+    "your_access_token",  // OAuth2 access token
+    "/"                   // root path
+)?;
+```
+
+Query:
+```sql
+SELECT path, size FROM gdrive_files WHERE is_dir = 0;
+```
+
+### PostgreSQL
+
+```rust
+use sqlite_vtable_opendal::backends::postgresql;
+
+postgresql::register(
+    &conn,
+    "pg_data",
+    "postgresql://user:password@localhost/mydb",
+    "my_table",     // table name
+    "id",           // key field (becomes path)
+    "data"          // value field (becomes content)
+)?;
+```
+
+Query:
+```sql
+SELECT path, size FROM pg_data;
+```
+
+### HTTP
+
+```rust
+use sqlite_vtable_opendal::backends::http;
+
+http::register(
+    &conn,
+    "http_data",
+    "https://api.example.com/data"  // endpoint URL
+)?;
+```
+
+Query:
+```sql
+SELECT path, content_type FROM http_data;
 ```
 
 ---
@@ -237,9 +315,9 @@ cargo test -- --nocapture
 
 ### Test Coverage
 
-- **Unit Tests**: 9 tests covering backend functionality
-- **Integration Tests**: 2 tests validating SQLite queries
-- **Doc Tests**: 3 tests ensuring examples work
+- **Unit Tests**: 21 tests covering all backend functionality
+- **Doc Tests**: 10 tests ensuring examples work
+- **Integration Tests**: Full end-to-end SQLite query validation
 
 ---
 
@@ -291,7 +369,12 @@ src/
 ├── error.rs                # Error types
 ├── backends/
 │   ├── mod.rs              # Backend trait
-│   └── local_fs.rs         # Local filesystem backend
+│   ├── local_fs.rs         # Local filesystem backend
+│   ├── s3.rs               # AWS S3 backend
+│   ├── dropbox.rs          # Dropbox backend
+│   ├── gdrive.rs           # Google Drive backend
+│   ├── postgresql.rs       # PostgreSQL backend
+│   └── http.rs             # HTTP/HTTPS backend
 └── vtab/
     └── mod.rs              # SQLite virtual table implementation
 ```
@@ -312,11 +395,12 @@ See `src/backends/local_fs.rs` for reference implementation.
 
 Contributions are welcome! Areas we'd love help with:
 
-- 🌐 Additional storage backends (Dropbox, S3, Azure, GCS)
-- 📊 Query optimization (predicate pushdown)
+- 🌐 Additional storage backends (Azure Blob, Google Cloud Storage, MinIO)
+- 📊 Query optimization (predicate pushdown, index hints)
 - 💾 Metadata caching layer
-- 📖 More usage examples
-- 🧪 Additional tests
+- 📖 More usage examples and tutorials
+- 🧪 Additional tests and benchmarks
+- 🐛 Bug fixes and performance improvements
 
 ### Development Setup
 

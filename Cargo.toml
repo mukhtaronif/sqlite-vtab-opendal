@@ -1,11 +1,11 @@
 [package]
 name = "sqlite-vtable-opendal"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["Mukhtar <mukhtaronif@gmail.com>"]
 license = "MIT OR Apache-2.0"
 description = "SQLite virtual tables for querying cloud object store metadata using OpenDAL"
-repository = "https://github.com/mukhtaronif/1-sqlite-vtab-opendal"
+repository = "https://github.com/mukhtaronif/sqlite-vtab-opendal"
 documentation = "https://docs.rs/sqlite-vtable-opendal"
 readme = "README.md"
 keywords = ["sqlite", "virtual-table", "cloud-storage", "opendal", "s3"]

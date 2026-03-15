@@ -11,9 +11,9 @@ use thiserror::Error;
 /// from configuration issues to storage backend errors.
 #[derive(Error, Debug)]
 pub enum VTableError {
-    /// Error from the underlying OpenDAL storage layer
+    /// Error from the underlying OpenDAL storage layer (boxed to reduce enum size)
     #[error("Storage backend error: {0}")]
-    OpenDal(#[from] opendal::Error),
+    OpenDal(Box<opendal::Error>),
 
     /// Error from SQLite operations
     #[error("SQLite error: {0}")]
@@ -42,6 +42,13 @@ pub enum VTableError {
 
 /// Convenience Result type for this library
 pub type Result<T> = std::result::Result<T, VTableError>;
+
+impl From<opendal::Error> for VTableError {
+    /// Convert OpenDAL error to VTableError (boxing it to reduce size)
+    fn from(err: opendal::Error) -> Self {
+        VTableError::OpenDal(Box::new(err))
+    }
+}
 
 impl From<VTableError> for rusqlite::Error {
     /// Convert our error type to rusqlite::Error for use in virtual table callbacks
