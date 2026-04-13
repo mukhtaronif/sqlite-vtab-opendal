@@ -54,7 +54,7 @@ unsafe impl VTabCursor for OpenDalCursor {
         &mut self,
         _idx_num: c_int,
         _idx_str: Option<&str>,
-        _args: &vtab::Values<'_>,
+        _args: &vtab::Filters<'_>,
     ) -> Result<()> {
         // This base implementation does nothing
         // Concrete backend implementations will override this

@@ -220,7 +220,7 @@ pub fn register(
             &mut self,
             _idx_num: c_int,
             _idx_str: Option<&str>,
-            _args: &vtab::Values<'_>,
+            _args: &vtab::Filters<'_>,
         ) -> rusqlite::Result<()> {
             // Create backend and fetch files
             let backend = HttpBackend::new(&self.endpoint);

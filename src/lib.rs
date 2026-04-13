@@ -3,13 +3,13 @@
 //! Federated SQLite Virtual Tables for Cloud Object Stores using OpenDAL
 //!
 //! This library provides a lightweight way to query metadata from cloud object stores
-//! (Dropbox, S3, Google Drive, PostgreSQL, HTTP) using SQL without ingesting the data.
+//! (Dropbox, S3, Google Drive, HTTP) using SQL without ingesting the data.
 //! It uses OpenDAL as the storage abstraction layer and SQLite's virtual table interface.
 //!
 //! ## Features
 //!
 //! - **Metadata-only queries**: Query file metadata without downloading content
-//! - **6 storage backends**: Local FS, S3, Dropbox, Google Drive, PostgreSQL, HTTP
+//! - **5 storage backends**: Local FS, S3, Dropbox, Google Drive, HTTP
 //! - **Standard SQL**: Use familiar SQL syntax for cloud storage queries
 //! - **Pagination support**: Handle large directories efficiently with limit/offset
 //! - **Zero data ingestion**: Query directly from storage without materialization
@@ -52,7 +52,6 @@
 //! - [`backends::s3`] - AWS S3 (and compatible services)
 //! - [`backends::dropbox`] - Dropbox
 //! - [`backends::gdrive`] - Google Drive
-//! - [`backends::postgresql`] - PostgreSQL databases
 //! - [`backends::http`] - HTTP/HTTPS endpoints
 
 pub mod types;

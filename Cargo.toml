@@ -1,6 +1,6 @@
 [package]
 name = "sqlite-vtable-opendal"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2021"
 authors = ["Mukhtar <mukhtaronif@gmail.com>"]
 license = "MIT OR Apache-2.0"
@@ -17,18 +17,17 @@ crate-type = ["lib", "cdylib"]
 
 [dependencies]
 # SQLite virtual table support
-rusqlite = { version = "0.32.1", features = ["bundled-full", "vtab"] }
+rusqlite = { version = "0.39.0", features = ["bundled-full", "vtab"] }
 
 # OpenDAL for cloud storage abstraction
-opendal = { version = "0.50.2", features = [
+opendal = { version = "0.55.0", features = [
     "services-fs",
     "services-http",
     "services-s3",
     "services-dropbox",
     "services-gdrive",
-    "services-postgresql",
 ] }
-tokio-postgres = "0.7"
+# Note: PostgreSQL service removed in opendal 0.55.0
 
 # Async runtime
 tokio = { version = "1.34.0", features = ["rt", "rt-multi-thread"] }

@@ -8,7 +8,7 @@ use crate::error::Result;
 use crate::types::{FileMetadata, QueryConfig};
 use async_trait::async_trait;
 use futures_util::TryStreamExt;
-use opendal::{services::Fs, EntryMode, Metakey, Operator};
+use opendal::{services::Fs, EntryMode, Operator};
 use std::path::Path;
 
 /// Local filesystem storage backend
@@ -71,19 +71,11 @@ impl StorageBackend for LocalFsBackend {
             config.root_path.trim_matches('/').to_string()
         };
 
-        // Create lister with metadata keys
-        let lister_builder = operator.lister_with(&normalized_path);
-
-        let mut lister = lister_builder
+        // Create lister
+        let mut lister = operator
+            .lister_with(&normalized_path)
             .recursive(config.recursive)
-            .metakey(
-                Metakey::ContentLength
-                    | Metakey::ContentType
-                    | Metakey::Mode
-                    | Metakey::LastModified,
-            )
-            .await
-            ?;
+            .await?;
 
         // Iterate through entries
         while let Some(entry) = lister.try_next().await? {
@@ -254,7 +246,7 @@ pub fn register(
             &mut self,
             _idx_num: c_int,
             _idx_str: Option<&str>,
-            _args: &vtab::Values<'_>,
+            _args: &vtab::Filters<'_>,
         ) -> rusqlite::Result<()> {
             // Create backend and fetch files
             let backend = LocalFsBackend::new(&self.root_path);

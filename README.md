@@ -42,9 +42,9 @@ ORDER BY size DESC;
 - 🚀 **Zero Data Ingestion** - Query directly from storage without downloading
 - 📊 **Standard SQL** - Use familiar SQL syntax for cloud storage queries
 - ⚡ **Metadata-Only Queries** - Fetch only what you need (size, dates, etags)
-- 🔌 **Multiple Backends** - Local FS, Dropbox, S3, Google Drive, PostgreSQL, HTTP (via OpenDAL)
+- 🔌 **Multiple Backends** - Local FS, Dropbox, S3, Google Drive, HTTP (via OpenDAL)
 - 🎯 **Composable** - Combine with SQLite's powerful query engine
-- 🧪 **Well-Tested** - 31 tests covering unit, integration, and doc tests
+- 🧪 **Well-Tested** - Comprehensive test coverage across all backends
 
 ---
 
@@ -181,26 +181,6 @@ gdrive::register(
 Query:
 ```sql
 SELECT path, size FROM gdrive_files WHERE is_dir = 0;
-```
-
-### PostgreSQL
-
-```rust
-use sqlite_vtable_opendal::backends::postgresql;
-
-postgresql::register(
-    &conn,
-    "pg_data",
-    "postgresql://user:password@localhost/mydb",
-    "my_table",     // table name
-    "id",           // key field (becomes path)
-    "data"          // value field (becomes content)
-)?;
-```
-
-Query:
-```sql
-SELECT path, size FROM pg_data;
 ```
 
 ### HTTP
@@ -373,7 +353,6 @@ src/
 │   ├── s3.rs               # AWS S3 backend
 │   ├── dropbox.rs          # Dropbox backend
 │   ├── gdrive.rs           # Google Drive backend
-│   ├── postgresql.rs       # PostgreSQL backend
 │   └── http.rs             # HTTP/HTTPS backend
 └── vtab/
     └── mod.rs              # SQLite virtual table implementation
